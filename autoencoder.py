@@ -4,13 +4,12 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 import progressbar
-import pdb
 
 from sklearn.datasets import fetch_mldata
 
 from optimizers import Adam
 from loss_functions import SquareLoss
-from layers import Dense, Activation, Reshape, BatchNormalization
+from layers import Dense, Activation, BatchNormalization
 from neural_network import NeuralNetwork
 
 class Autoencoder():
@@ -33,7 +32,7 @@ class Autoencoder():
         self.autoencoder = NeuralNetwork(optimizer=optimizer, loss=loss_function)
         self.autoencoder.layers.extend(self.encoder.layers)
         self.autoencoder.layers.extend(self.decoder.layers)
-        self.autoencoder.back_opt = False
+        self.autoencoder.output_dim = self.img_dim
 
         print ()
         self.autoencoder.summary(name="Variational Autoencoder")
@@ -86,6 +85,7 @@ class Autoencoder():
             imgs = X[idx]
 
             # Train the Autoencoder
+            self.autoencoder.batch_size = batch_size
             loss, _ = self.autoencoder.train_on_batch(imgs, imgs)
 
             # Display the progress
@@ -120,4 +120,4 @@ class Autoencoder():
 
 if __name__ == '__main__':
     ae = Autoencoder()
-    ae.train(n_epochs=200000, batch_size=1, save_interval=40)
+    ae.train(n_epochs=200000, batch_size=128, save_interval=40)

@@ -6,8 +6,6 @@ import matplotlib.colors as colors
 import numpy as np
 
 from data_operation import calculate_covariance_matrix
-from data_operation import calculate_correlation_matrix
-from data_manipulation import standardize
 
 bar_widgets = [
     'Training: ', progressbar.Percentage(), ' ', progressbar.Bar(marker="-", left="[", right="]"),

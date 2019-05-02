@@ -4,7 +4,6 @@ import numpy as np
 import progressbar
 from data_manipulation import batch_iterator
 from misc import bar_widgets
-import pdb
 import datetime
 
 
@@ -28,7 +27,8 @@ class NeuralNetwork():
         self.errors = {"training": [], "validation": []}
         self.loss_function = loss()
         self.progressbar = progressbar.ProgressBar(widgets=bar_widgets)
-        self.back_opt = False
+        self.output_dim = None
+        self.batch_size = 0
 
         self.val_set = None
         if validation_data:
@@ -102,7 +102,14 @@ class NeuralNetwork():
     def _backward_pass(self, loss_grad):
         """ Propagate the gradient 'backwards' and update the weights in each layer """
         for idx, layer in enumerate(reversed(self.layers)):
-            loss_grad = layer.backward_pass(loss_grad, idx, self.back_opt)
+            loss_grad = layer.backward_pass(loss_grad, idx)
+
+    # Kevin's implementation (Ignore)
+    #def _jacobian(self):
+    #    loss_grad = np.identity(self.output_dim)
+    #    batch_loss_grad = np.tile(loss_grad,(self.batch_size,1,1))
+    #    for idx, layer in enumerate(reversed(self.layers)):
+    #        layer.jacob_backward_pass(batch_loss_grad, idx)
 
     def summary(self, name="Model Summary"):
         # Print model name
