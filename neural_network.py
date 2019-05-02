@@ -7,7 +7,6 @@ from misc import bar_widgets
 import datetime
 
 
-
 class NeuralNetwork():
     """Neural Network. Deep Learning base model.
 
