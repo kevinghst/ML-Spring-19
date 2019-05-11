@@ -282,19 +282,19 @@ class BatchNormalization(Layer):
         return accum_grad
 
     # Kevin's implemenation
-    def jacob_backward_pass(self,accum_grad, idx):
-        start = time.time()
-        batch_size = accum_grad.shape[0]
-        gamma = self.gamma
-        expand_X_centered = np.apply_along_axis(np.tile, -1, self.X_centered, (accum_grad.shape[1],1))
+    #def jacob_backward_pass(self,accum_grad, idx):
+    #    start = time.time()
+    #    batch_size = accum_grad.shape[0]
+    #    gamma = self.gamma
+    #    expand_X_centered = np.apply_along_axis(np.tile, -1, self.X_centered, (accum_grad.shape[1],1))
 
-        accum_grad = (1/batch_size) * gamma * self.stddev_inv * (
-            batch_size * accum_grad - np.sum(accum_grad, axis=0) - expand_X_centered * self.stddev_inv**2 * np.sum(accum_grad * expand_X_centered, axis=0)
-        )
-        end = time.time()
-        duration = (end-start) * 1000
-        print(str(idx) + ":" + str(duration))
-        return accum_grad
+    #    accum_grad = (1/batch_size) * gamma * self.stddev_inv * (
+    #        batch_size * accum_grad - np.sum(accum_grad, axis=0) - expand_X_centered * self.stddev_inv**2 * np.sum(accum_grad * expand_X_centered, axis=0)
+    #    )
+    #    end = time.time()
+    #    duration = (end-start) * 1000
+    #    print(str(idx) + ":" + str(duration))
+    #    return accum_grad
 
     def output_shape(self):
         return self.input_shape
