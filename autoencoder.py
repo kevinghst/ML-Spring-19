@@ -7,10 +7,11 @@ import progressbar
 
 from sklearn.datasets import fetch_mldata
 
-from optimizers import Adam
-from loss_functions import SquareLoss
+from optimizers import Adam, Adadelta
+from loss_functions import SquareLoss, CrossEntropy
 from layers import Dense, Activation, BatchNormalization
 from neural_network import NeuralNetwork
+import pdb
 
 class Autoencoder():
     """An Autoencoder with deep fully-connected neural nets.
@@ -21,9 +22,9 @@ class Autoencoder():
         self.img_rows = 28
         self.img_cols = 28
         self.img_dim = self.img_rows * self.img_cols
-        self.latent_dim = 32 # The dimension of the data embedding
+        self.latent_dim = 128 # The dimension of the data embedding
 
-        optimizer = Adam(learning_rate=0.0002, b1=0.5)
+        optimizer = Adadelta()
         loss_function = SquareLoss
 
         self.encoder = self.build_encoder(optimizer, loss_function)
@@ -33,6 +34,7 @@ class Autoencoder():
         self.autoencoder.layers.extend(self.encoder.layers)
         self.autoencoder.layers.extend(self.decoder.layers)
         self.autoencoder.output_dim = self.img_dim
+        self.autoencoder.latent_dim = self.latent_dim
 
         print ()
         self.autoencoder.summary(name="Variational Autoencoder")
@@ -40,13 +42,13 @@ class Autoencoder():
     def build_encoder(self, optimizer, loss_function):
 
         encoder = NeuralNetwork(optimizer=optimizer, loss=loss_function)
-        encoder.add(Dense(512, input_shape=(self.img_dim,)))
+        encoder.add(Dense(512, input_shape=(self.img_dim,), first_layer=True))
         encoder.add(Activation('leaky_relu'))
-        encoder.add(BatchNormalization(momentum=0.8))
+        #encoder.add(BatchNormalization(momentum=0.8))
         encoder.add(Dense(256))
         encoder.add(Activation('leaky_relu'))
-        encoder.add(BatchNormalization(momentum=0.8))
-        encoder.add(Dense(self.latent_dim))
+        #encoder.add(BatchNormalization(momentum=0.8))
+        encoder.add(Dense(self.latent_dim, latent_layer=True))
 
         return encoder
 
@@ -55,10 +57,10 @@ class Autoencoder():
         decoder = NeuralNetwork(optimizer=optimizer, loss=loss_function)
         decoder.add(Dense(256, input_shape=(self.latent_dim,)))
         decoder.add(Activation('leaky_relu'))
-        decoder.add(BatchNormalization(momentum=0.8))
+        #decoder.add(BatchNormalization(momentum=0.8))
         decoder.add(Dense(512))
         decoder.add(Activation('leaky_relu'))
-        decoder.add(BatchNormalization(momentum=0.8))
+        #decoder.add(BatchNormalization(momentum=0.8))
         decoder.add(Dense(self.img_dim))
         decoder.add(Activation('tanh'))
 
@@ -86,6 +88,7 @@ class Autoencoder():
 
             # Train the Autoencoder
             self.autoencoder.batch_size = batch_size
+            self.autoencoder.epochs += 1
             loss, _ = self.autoencoder.train_on_batch(imgs, imgs)
 
             # Display the progress
@@ -120,4 +123,4 @@ class Autoencoder():
 
 if __name__ == '__main__':
     ae = Autoencoder()
-    ae.train(n_epochs=200000, batch_size=128, save_interval=40)
+    ae.train(n_epochs=200000, batch_size=1, save_interval=40)

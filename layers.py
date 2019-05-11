@@ -3,8 +3,9 @@ from __future__ import print_function, division
 import math
 import numpy as np
 import copy
-from activation_functions import Sigmoid, TanH, LeakyReLU
-
+from activation_functions import Sigmoid, TanH, LeakyReLU, ReLU
+import pdb
+import time
 
 class Layer(object):
 
@@ -48,13 +49,16 @@ class Dense(Layer):
         the number of features of the input. Must be specified if it is the first layer in
         the network.
     """
-    def __init__(self, n_units, input_shape=None):
+    def __init__(self, n_units, input_shape=None, first_layer=False, latent_layer=False):
         self.layer_input = None
         self.input_shape = input_shape
         self.n_units = n_units
         self.trainable = True
         self.W = None
         self.w0 = None
+        self.backprop_opt = False
+        self.first_layer = first_layer
+        self.latent_layer = latent_layer
 
     def initialize(self, optimizer):
         # Initialize the weights
@@ -91,10 +95,46 @@ class Dense(Layer):
         return accum_grad
 
     #Kevin's implementation (ignore)
-    #def jacob_backward_pass(self, accum_grad, idx):
+    def jacob_backward_pass(self, accum_grad, idx):
+        start = time.time()
+        W = self.W
+        if idx == 1:
+            accum_grad = np.einsum('ij,jk->ijk', accum_grad, W.T)
+            end = time.time()
+            duration = (end-start) * 1000
+            print(str(idx) + ":" + str(duration))
+            return accum_grad
+        else:
+            accum_grad = accum_grad.dot(W.T)
+            end = time.time()
+            duration = (end-start) * 1000
+            print(str(idx) + ":" + str(duration))
+            return accum_grad
+
+    #def jacob_backward_opt_pass(self, past_grad, idx):
+    #    start = time.time()
     #    W = self.W
-    #    accum_grad = accum_grad.dot(W.T)
-    #    return accum_grad
+    #    if self.latent_layer:
+    #        accum_grad = past_grad.dot(W.T)
+    #        end = time.time()
+    #        duration = (end-start) * 1000
+    #        print(str(idx) + ":" + str(duration))
+    #        return (past_grad, W)
+    #    else:
+    #        a_grad, b_grad = past_grad
+    #        temp = b_grad.dot(W.T)
+    #        accum_grad = np.einsum('ijk,ikp->ijp', a_grad, temp)
+
+    #        if self.first_layer:
+    #            end = time.time()
+    #            duration = (end-start) * 1000
+    #            print(str(idx) + ":" + str(duration))
+    #            return accum_grad
+    #        else:
+    #            end = time.time()
+    #            duration = (end-start) * 1000
+    #            print(str(idx) + ":" + str(duration))
+    #            return (a_grad, temp)
 
     def output_shape(self):
         return (self.n_units, )
@@ -104,6 +144,7 @@ activation_functions = {
     'sigmoid': Sigmoid,
     'leaky_relu': LeakyReLU,
     'tanh': TanH,
+    'relu': ReLU
 }
 
 class Activation(Layer):
@@ -119,6 +160,8 @@ class Activation(Layer):
         self.activation_name = name
         self.activation_func = activation_functions[name]()
         self.trainable = True
+        self.backprop_opt = False
+        self.latent_layer = False
 
     def layer_name(self):
         return "Activation (%s)" % (self.activation_func.__class__.__name__)
@@ -131,11 +174,39 @@ class Activation(Layer):
         return accum_grad * self.activation_func.gradient(self.layer_input)
 
     # Kevin's implementation (ignore)
-    #def jacob_backward_pass(self,accum_grad, idx):
+    def jacob_backward_pass(self,accum_grad, idx):
+        start = time.time()
+        act_grad = self.activation_func.gradient(self.layer_input)
+        if idx == 0:
+            end = time.time()
+            duration = (end-start) * 1000
+            print(str(idx) + ":" + str(duration))
+            return act_grad
+        else:
+            arr = np.einsum('ijk,ik -> ijk',accum_grad, act_grad)
+            end = time.time()
+            duration = (end-start) * 1000
+            print(str(idx) + ":" + str(duration))
+            return arr
+
+    #def jacob_backward_opt_pass(self, past_grad, idx):
+    #    start = time.time()
+    #    a_grad, b_grad = past_grad
     #    act_grad = self.activation_func.gradient(self.layer_input)
     #    act_grad = map(np.diagflat, act_grad)
     #    act_grad = np.array(list(act_grad))
-    #    return accum_grad * act_grad
+
+    #    if len(b_grad.shape) == 2:
+    #        temp = np.tensordot(act_grad,b_grad.T,axes=(1,1)).swapaxes(1,2)
+    #    else:
+    #        temp = np.einsum('ijk,ikp->ijp', b_grad, act_grad)
+
+    #    accum_grad = np.einsum('ijk,ikp->ijp', a_grad, temp)
+
+    #    end = time.time()
+    #    duration = (end-start) * 1000
+    #    print(str(idx) + ":" + str(duration))
+    #    return (a_grad, temp)
 
     def output_shape(self):
         return self.input_shape
@@ -150,6 +221,8 @@ class BatchNormalization(Layer):
         self.eps = 0.01
         self.running_mean = None
         self.running_var = None
+        self.backprop_opt = False
+        self.latent_layer = False
 
     def initialize(self, optimizer):
         # Initialize the parameters
@@ -202,13 +275,25 @@ class BatchNormalization(Layer):
         batch_size = accum_grad.shape[0]
 
         # The gradient of the loss with respect to the layer inputs (use weights and statistics from forward pass)
-
         accum_grad = (1 / batch_size) * gamma * self.stddev_inv * (
-            batch_size * accum_grad
-            - np.sum(accum_grad, axis=0)
-            - self.X_centered * self.stddev_inv**2 * np.sum(accum_grad * self.X_centered, axis=0)
-            )
+            batch_size * accum_grad - np.sum(accum_grad, axis=0) - self.X_centered * self.stddev_inv**2 * np.sum(accum_grad * self.X_centered, axis=0)
+        )
 
+        return accum_grad
+
+    # Kevin's implemenation
+    def jacob_backward_pass(self,accum_grad, idx):
+        start = time.time()
+        batch_size = accum_grad.shape[0]
+        gamma = self.gamma
+        expand_X_centered = np.apply_along_axis(np.tile, -1, self.X_centered, (accum_grad.shape[1],1))
+
+        accum_grad = (1/batch_size) * gamma * self.stddev_inv * (
+            batch_size * accum_grad - np.sum(accum_grad, axis=0) - expand_X_centered * self.stddev_inv**2 * np.sum(accum_grad * expand_X_centered, axis=0)
+        )
+        end = time.time()
+        duration = (end-start) * 1000
+        print(str(idx) + ":" + str(duration))
         return accum_grad
 
     def output_shape(self):

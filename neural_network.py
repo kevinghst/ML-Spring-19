@@ -4,7 +4,8 @@ import numpy as np
 import progressbar
 from data_manipulation import batch_iterator
 from misc import bar_widgets
-import datetime
+import time
+import pdb
 
 
 class NeuralNetwork():
@@ -28,6 +29,8 @@ class NeuralNetwork():
         self.progressbar = progressbar.ProgressBar(widgets=bar_widgets)
         self.output_dim = None
         self.batch_size = 0
+        self.epochs = 0
+        self.latent_dim = 0
 
         self.val_set = None
         if validation_data:
@@ -76,7 +79,6 @@ class NeuralNetwork():
     def fit(self, X, y, n_epochs, batch_size):
         """ Trains the model for a fixed number of epochs """
         for _ in self.progressbar(range(n_epochs)):
-            
             batch_error = []
             for X_batch, y_batch in batch_iterator(X, y, batch_size=batch_size):
                 loss, _ = self.train_on_batch(X_batch, y_batch)
@@ -93,22 +95,48 @@ class NeuralNetwork():
     def _forward_pass(self, X, training=True):
         """ Calculate the output of the NN """
         layer_output = X
-        for layer in self.layers:
-            layer_output = layer.forward_pass(layer_output, training)
+        for idx, layer in enumerate(self.layers):
+           layer_output = layer.forward_pass(layer_output, training)
 
         return layer_output
 
     def _backward_pass(self, loss_grad):
+        term_loss_grad = loss_grad
         """ Propagate the gradient 'backwards' and update the weights in each layer """
         for idx, layer in enumerate(reversed(self.layers)):
             loss_grad = layer.backward_pass(loss_grad, idx)
+        jacobian = self._jacobian()
+        pdb.set_trace()
+        
+        #batch_size = loss_grad.shape[0]
+        #arr = np.empty((0,784),float)
+        #for i in range(0,batch_size):
+        #    dot = np.dot(jacobian[i].T, term_loss_grad[i].T)
+        #    arr = np.vstack((arr,dot[None]))
 
     # Kevin's implementation (Ignore)
-    #def _jacobian(self):
-    #    loss_grad = np.identity(self.output_dim)
-    #    batch_loss_grad = np.tile(loss_grad,(self.batch_size,1,1))
-    #    for idx, layer in enumerate(reversed(self.layers)):
-    #        layer.jacob_backward_pass(batch_loss_grad, idx)
+    def _jacobian(self):
+        #loss_grad = np.identity(self.output_dim)
+        #batch_loss_grad = np.tile(loss_grad,(self.batch_size,1,1))
+        batch_loss_grad = None
+        for idx, layer in enumerate(reversed(self.layers)):
+            batch_loss_grad = layer.jacob_backward_pass(batch_loss_grad, idx)
+        return batch_loss_grad
+
+    def _jacobian_opt(self):
+        rev_layers = self.layers[::-1]
+        loss_grad = np.identity(self.output_dim)
+        batch_loss_grad = np.tile(loss_grad,(self.batch_size,1,1))
+
+        idx = 0
+        while not rev_layers[idx].latent_layer:
+            batch_loss_grad = rev_layers[idx].jacob_backward_pass(batch_loss_grad, idx)
+            idx += 1
+
+        while idx < len(rev_layers):
+            batch_loss_grad = rev_layers[idx].jacob_backward_opt_pass(batch_loss_grad, idx)
+            idx += 1
+        return batch_loss_grad
 
     def summary(self, name="Model Summary"):
         # Print model name
