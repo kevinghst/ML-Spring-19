@@ -53,7 +53,7 @@ class Dense(Layer):
         self.layer_input = None
         self.input_shape = input_shape
         self.n_units = n_units
-        self.trainable = True
+        self.trainable = False
         self.W = None
         self.w0 = None
         self.backprop_opt = False
@@ -111,30 +111,30 @@ class Dense(Layer):
             print(str(idx) + ":" + str(duration))
             return accum_grad
 
-    #def jacob_backward_opt_pass(self, past_grad, idx):
-    #    start = time.time()
-    #    W = self.W
-    #    if self.latent_layer:
-    #        accum_grad = past_grad.dot(W.T)
-    #        end = time.time()
-    #        duration = (end-start) * 1000
-    #        print(str(idx) + ":" + str(duration))
-    #        return (past_grad, W)
-    #    else:
-    #        a_grad, b_grad = past_grad
-    #        temp = b_grad.dot(W.T)
-    #        accum_grad = np.einsum('ijk,ikp->ijp', a_grad, temp)
+    def jacob_backward_opt_pass(self, past_grad, idx):
+        start = time.time()
+        W = self.W
+        if self.latent_layer:
+            accum_grad = past_grad.dot(W.T)
+            end = time.time()
+            duration = (end-start) * 1000
+            print(str(idx) + ":" + str(duration))
+            return (past_grad, W)
+        else:
+            a_grad, b_grad = past_grad
+            temp = b_grad.dot(W.T)
+            accum_grad = np.einsum('ijk,ikp->ijp', a_grad, temp)
 
-    #        if self.first_layer:
-    #            end = time.time()
-    #            duration = (end-start) * 1000
-    #            print(str(idx) + ":" + str(duration))
-    #            return accum_grad
-    #        else:
-    #            end = time.time()
-    #            duration = (end-start) * 1000
-    #            print(str(idx) + ":" + str(duration))
-    #            return (a_grad, temp)
+            if self.first_layer:
+                end = time.time()
+                duration = (end-start) * 1000
+                print(str(idx) + ":" + str(duration))
+                return accum_grad
+            else:
+                end = time.time()
+                duration = (end-start) * 1000
+                print(str(idx) + ":" + str(duration))
+                return (a_grad, temp)
 
     def output_shape(self):
         return (self.n_units, )
@@ -159,7 +159,7 @@ class Activation(Layer):
     def __init__(self, name):
         self.activation_name = name
         self.activation_func = activation_functions[name]()
-        self.trainable = True
+        self.trainable = False
         self.backprop_opt = False
         self.latent_layer = False
 
@@ -189,24 +189,24 @@ class Activation(Layer):
             print(str(idx) + ":" + str(duration))
             return arr
 
-    #def jacob_backward_opt_pass(self, past_grad, idx):
-    #    start = time.time()
-    #    a_grad, b_grad = past_grad
-    #    act_grad = self.activation_func.gradient(self.layer_input)
-    #    act_grad = map(np.diagflat, act_grad)
-    #    act_grad = np.array(list(act_grad))
+    def jacob_backward_opt_pass(self, past_grad, idx):
+        start = time.time()
+        a_grad, b_grad = past_grad
+        act_grad = self.activation_func.gradient(self.layer_input)
+        act_grad = map(np.diagflat, act_grad)
+        act_grad = np.array(list(act_grad))
 
-    #    if len(b_grad.shape) == 2:
-    #        temp = np.tensordot(act_grad,b_grad.T,axes=(1,1)).swapaxes(1,2)
-    #    else:
-    #        temp = np.einsum('ijk,ikp->ijp', b_grad, act_grad)
+        if len(b_grad.shape) == 2:
+            temp = np.tensordot(act_grad,b_grad.T,axes=(1,1)).swapaxes(1,2)
+        else:
+            temp = np.einsum('ijk,ikp->ijp', b_grad, act_grad)
 
-    #    accum_grad = np.einsum('ijk,ikp->ijp', a_grad, temp)
+        accum_grad = np.einsum('ijk,ikp->ijp', a_grad, temp)
 
-    #    end = time.time()
-    #    duration = (end-start) * 1000
-    #    print(str(idx) + ":" + str(duration))
-    #    return (a_grad, temp)
+        end = time.time()
+        duration = (end-start) * 1000
+        print(str(idx) + ":" + str(duration))
+        return (a_grad, temp)
 
     def output_shape(self):
         return self.input_shape
@@ -217,7 +217,7 @@ class BatchNormalization(Layer):
     """
     def __init__(self, momentum=0.99):
         self.momentum = momentum
-        self.trainable = True
+        self.trainable = False
         self.eps = 0.01
         self.running_mean = None
         self.running_var = None

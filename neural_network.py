@@ -106,7 +106,6 @@ class NeuralNetwork():
         for idx, layer in enumerate(reversed(self.layers)):
             loss_grad = layer.backward_pass(loss_grad, idx)
         jacobian = self._jacobian()
-        pdb.set_trace()
         
         #batch_size = loss_grad.shape[0]
         #arr = np.empty((0,784),float)
@@ -114,10 +113,10 @@ class NeuralNetwork():
         #    dot = np.dot(jacobian[i].T, term_loss_grad[i].T)
         #    arr = np.vstack((arr,dot[None]))
 
-    # Kevin's implementation (Ignore)
+        pdb.set_trace()
+
+    # Kevin's implementation
     def _jacobian(self):
-        #loss_grad = np.identity(self.output_dim)
-        #batch_loss_grad = np.tile(loss_grad,(self.batch_size,1,1))
         batch_loss_grad = None
         for idx, layer in enumerate(reversed(self.layers)):
             batch_loss_grad = layer.jacob_backward_pass(batch_loss_grad, idx)
@@ -125,9 +124,8 @@ class NeuralNetwork():
 
     def _jacobian_opt(self):
         rev_layers = self.layers[::-1]
-        loss_grad = np.identity(self.output_dim)
-        batch_loss_grad = np.tile(loss_grad,(self.batch_size,1,1))
 
+        batch_loss_grad = None
         idx = 0
         while not rev_layers[idx].latent_layer:
             batch_loss_grad = rev_layers[idx].jacob_backward_pass(batch_loss_grad, idx)
