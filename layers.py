@@ -1,10 +1,8 @@
-
 from __future__ import print_function, division
 import math
 import numpy as np
 import copy
 from activation_functions import Sigmoid, TanH, LeakyReLU, ReLU
-import pdb
 import time
 
 class Layer(object):
@@ -94,7 +92,6 @@ class Dense(Layer):
         accum_grad = accum_grad.dot(W.T)
         return accum_grad
 
-    #Kevin's implementation (ignore)
     def jacob_backward_pass(self, accum_grad, idx):
         start = time.time()
         W = self.W
@@ -173,7 +170,6 @@ class Activation(Layer):
     def backward_pass(self, accum_grad, idx):
         return accum_grad * self.activation_func.gradient(self.layer_input)
 
-    # Kevin's implementation (ignore)
     def jacob_backward_pass(self,accum_grad, idx):
         start = time.time()
         act_grad = self.activation_func.gradient(self.layer_input)
@@ -281,7 +277,6 @@ class BatchNormalization(Layer):
 
         return accum_grad
 
-    # Kevin's implemenation
     #def jacob_backward_pass(self,accum_grad, idx):
     #    start = time.time()
     #    batch_size = accum_grad.shape[0]

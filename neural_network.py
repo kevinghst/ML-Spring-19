@@ -5,8 +5,6 @@ import progressbar
 from data_manipulation import batch_iterator
 from misc import bar_widgets
 import time
-import pdb
-
 
 class NeuralNetwork():
     """Neural Network. Deep Learning base model.
@@ -105,17 +103,7 @@ class NeuralNetwork():
         """ Propagate the gradient 'backwards' and update the weights in each layer """
         for idx, layer in enumerate(reversed(self.layers)):
             loss_grad = layer.backward_pass(loss_grad, idx)
-        jacobian = self._jacobian()
-        
-        #batch_size = loss_grad.shape[0]
-        #arr = np.empty((0,784),float)
-        #for i in range(0,batch_size):
-        #    dot = np.dot(jacobian[i].T, term_loss_grad[i].T)
-        #    arr = np.vstack((arr,dot[None]))
 
-        pdb.set_trace()
-
-    # Kevin's implementation
     def _jacobian(self):
         batch_loss_grad = None
         for idx, layer in enumerate(reversed(self.layers)):

@@ -11,7 +11,6 @@ from optimizers import Adam, Adadelta
 from loss_functions import SquareLoss, CrossEntropy
 from layers import Dense, Activation, BatchNormalization
 from neural_network import NeuralNetwork
-import pdb
 
 class Autoencoder():
     """An Autoencoder with deep fully-connected neural nets.
@@ -22,7 +21,7 @@ class Autoencoder():
         self.img_rows = 28
         self.img_cols = 28
         self.img_dim = self.img_rows * self.img_cols
-        self.latent_dim = 128 # The dimension of the data embedding
+        self.latent_dim = 16 # The dimension of the data embedding
 
         optimizer = Adadelta()
         loss_function = SquareLoss
