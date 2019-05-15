@@ -51,7 +51,7 @@ class Dense(Layer):
         self.layer_input = None
         self.input_shape = input_shape
         self.n_units = n_units
-        self.trainable = False
+        self.trainable = True
         self.W = None
         self.w0 = None
         self.backprop_opt = False
@@ -156,7 +156,7 @@ class Activation(Layer):
     def __init__(self, name):
         self.activation_name = name
         self.activation_func = activation_functions[name]()
-        self.trainable = False
+        self.trainable = True
         self.backprop_opt = False
         self.latent_layer = False
 
@@ -213,7 +213,7 @@ class BatchNormalization(Layer):
     """
     def __init__(self, momentum=0.99):
         self.momentum = momentum
-        self.trainable = False
+        self.trainable = True
         self.eps = 0.01
         self.running_mean = None
         self.running_var = None
@@ -277,19 +277,19 @@ class BatchNormalization(Layer):
 
         return accum_grad
 
-    #def jacob_backward_pass(self,accum_grad, idx):
-    #    start = time.time()
-    #    batch_size = accum_grad.shape[0]
-    #    gamma = self.gamma
-    #    expand_X_centered = np.apply_along_axis(np.tile, -1, self.X_centered, (accum_grad.shape[1],1))
+    def jacob_backward_pass(self,accum_grad, idx):
+        start = time.time()
+        batch_size = accum_grad.shape[0]
+        gamma = self.gamma
+        expand_X_centered = np.apply_along_axis(np.tile, -1, self.X_centered, (accum_grad.shape[1],1))
 
-    #    accum_grad = (1/batch_size) * gamma * self.stddev_inv * (
-    #        batch_size * accum_grad - np.sum(accum_grad, axis=0) - expand_X_centered * self.stddev_inv**2 * np.sum(accum_grad * expand_X_centered, axis=0)
-    #    )
-    #    end = time.time()
-    #    duration = (end-start) * 1000
-    #    print(str(idx) + ":" + str(duration))
-    #    return accum_grad
+        accum_grad = (1/batch_size) * gamma * self.stddev_inv * (
+            batch_size * accum_grad - np.sum(accum_grad, axis=0) - expand_X_centered * self.stddev_inv**2 * np.sum(accum_grad * expand_X_centered, axis=0)
+        )
+        end = time.time()
+        duration = (end-start) * 1000
+        print(str(idx) + ":" + str(duration))
+        return accum_grad
 
     def output_shape(self):
         return self.input_shape

@@ -36,7 +36,7 @@ class Autoencoder():
         self.autoencoder.latent_dim = self.latent_dim
 
         print ()
-        self.autoencoder.summary(name="Variational Autoencoder")
+        self.autoencoder.summary(name="Autoencoder")
 
     def build_encoder(self, optimizer, loss_function):
 
@@ -56,10 +56,10 @@ class Autoencoder():
         decoder = NeuralNetwork(optimizer=optimizer, loss=loss_function)
         decoder.add(Dense(256, input_shape=(self.latent_dim,)))
         decoder.add(Activation('leaky_relu'))
-        #decoder.add(BatchNormalization(momentum=0.8))
+        decoder.add(BatchNormalization(momentum=0.8))
         decoder.add(Dense(512))
         decoder.add(Activation('leaky_relu'))
-        #decoder.add(BatchNormalization(momentum=0.8))
+        decoder.add(BatchNormalization(momentum=0.8))
         decoder.add(Dense(self.img_dim))
         decoder.add(Activation('tanh'))
 
@@ -122,4 +122,4 @@ class Autoencoder():
 
 if __name__ == '__main__':
     ae = Autoencoder()
-    ae.train(n_epochs=200000, batch_size=1, save_interval=40)
+    ae.train(n_epochs=200000, batch_size=128, save_interval=40)
